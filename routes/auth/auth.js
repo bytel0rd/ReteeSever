@@ -1,94 +1,141 @@
-var express = require('express');
-var passport = require('passport');
+const express = require('express');
+const passport = require('passport');
 
 // a sub-authetication router is created
-var router = require('express').Router();
+const router = new express.Router();
 
 // importinng the converted UserModel from the schema
-var Users = require('./../../models/userSchema.js').Users;
+const Users = require('./../../models/userSchema.js').Users;
 
 // import the passportInit and passing @ {passport} and @ {Users} model has a parameter
-require('./passportInit.js')(passport,Users);
+require('./passportInit.js')(passport, Users);
 
-// @ "signIn" Route a post requests is sent
+function currentUserBio(req, res) {
+  return Users.findOne({
+    _id: req.session.passport.user,
+  }, (userErr, user) => {
+    if (userErr) {
+      return res.status(407).json({
+        userErr,
+      });
+    }
+    // sends a response with the user object
+    return res.status(200).json({
+      user,
+    });
+  });
+}
+
+// @ 'signIn' Route a post requests is sent
 // the request body contains the email and password has a body
 // which is used for login  authetication
-// and a json response is sent with the user data;
+// and a json response which contains the userId  is sent with the user data;
 router
   .route('/SignIn')
-  .post(passport.authenticate('login', {
-    successRedirect: '/auth/dashBoard'
-  }));
+  .post(passport.authenticate('login', {}), (req, res) => {
+    // res.status(200).json({
+    //   userId: req.session.passport,
+    // });
+
+    currentUserBio(req, res);
+  });
 
 
-  // @ "signUp" Route a post requests is sent
-  // the request body contains the email , password  and profile object has a body
-  // which is used for login  authetication
-  // and a json response is sent with the user data;
-
+// @ 'signUp' Route a post requests is sent
+// the request body contains the email , password  and profile object has a body
+// which is used for login  authetication
+// and a json response which cotains the userid  is sent with the user data;
 router
   .route('/SignUp')
-  .post(passport.authenticate('signUp', {
-    successRedirect: '/auth/dashBoard'
-    // ,failureRedirect: '/auth/retrylogin'
-  }));
+  .post(passport.authenticate('signUp', {}), (req, res) => {
+    // res.status(200).json({
+    //   userId: req.session.passport,
+    // });
+    //
+    currentUserBio(req, res);
+  });
 
 
 // if the user is succesfull in login in a
 // user object is sent back to the user has response during a get request
 // has a post request the corresponding sent data is updated by the user
+// the dashboard route sends back and update the registered user's
+// correspoinding biodatas if the user is unauthorized , the response
+// is sent has a 401 response which is unaythorized request
 router
   .route('/dashBoard')
-  .get(function(req, res) {
-    console.log(req.session.passport);
-    console.log(req.session.passport.user);
-    console.log(req.isAuthenticated());
+  .get((req, res) => {
     if (req.isAuthenticated()) {
       Users.findOne({
-        owner_ID: req.session.passport.user
-      }, function(err, User) {
-        if (err)
-          return (err);
-        if (User === null)
-          res.redirect('/auth/editDashBoard');
-        // console.log(User);
+        _id: req.session.passport.user,
+      }, (userErr, user) => {
+        if (userErr) {
+          return (userErr);
+        }
         // sends a response with the user object
-        res.status(200).json({"login": true, User: User});
-        return User;
+        return res.status(200).json({
+          user,
+        });
+      });
+    } else {
+      res.status(401).json({
+        mgs: 'unauthorize request login',
       });
     }
   })
-  .post(function(req, res) {
-    var newBio = req.body;
-
+  .post((req, res) => {
+    const newBio = req.body;
     Users.findOneAndUpdate({
-      owner_ID: req.session.passport.user
+      owner_ID: req.session.passport.user,
     }, {
-      $set: newBio
+      $set: {
+        profile: newBio,
+      },
     }, {
       new: true,
-      upsert: true
-    }, function(err, User) {
-      if (err)
-        res.send(err);
-        // the newly user object is sent back has a response
+      upsert: true,
+    }, (err, User) => {
+      if (err) {
+        res.status(401).json(err);
+      }
+      // the newly user object is sent back has a response
       res.status(201).json(User);
     });
-
-
   })
-  .put(function(req, res) {
-
+  .put((req, res) => {
+    res.json({
+      message: 'not update from server',
+    });
   });
-
-  // this routes enable a login user to log out of the system
+// this routes enable a login user to log out of the system
 router
   .route('/logOut')
-  .get(function(req, res) {
+  .get((req, res) => {
     if (req.isAuthenticated()) {
       req.logOut();
     }
     res.redirect('/');
   });
+// 'profile.address': newBio,
+router.post('/authorizeAgent', (req, res) => {
+  const newBio = req.body;
+  Users.findOneAndUpdate({
+    owner_ID: req.session.passport.user,
+  }, {
+    $set: {
+      'profile.isAgent': true,
+      'profile.address': newBio.address,
+    },
+  }, {
+    new: true,
+    upsert: true,
+  }, (err, User) => {
+    if (err) {
+      res.status(401).json(err);
+    }
+    // the newly user object is sent back has a response
+    res.status(201).json(User);
+  });
+});
 
 module.exports = router;

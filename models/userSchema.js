@@ -1,34 +1,63 @@
-var mongoose = require('mongoose');
-var schema = mongoose.Schema;
-var ObjectId = mongoose.Schema.Types.ObjectId;
+const mongoose = require('mongoose');
+const schema = mongoose.Schema;
 
 
 // creating a schema which show the validation of userbiodata
 // which takes email, password, fullName,imgurl has strings
 // phoneNo has a Number
-var Userschema = new schema({
+const Userschema = new schema({
   email: {
     type: String,
     unique: true,
-    required: true
+    required: true,
   },
   password: {
     type: String,
-    required: true
+    required: true,
   },
-  profile:{
-    fullName: {type: String, required: true},
-    phoneNo:{ type: Number, required: true},
-    customerId:{type: String, unique: true ,required: true},
-    imgUrl: String
-  }
+  profile: {
+    fullName: {
+      type: String,
+      required: true,
+    },
+    phoneNo: {
+      type: Number,
+      required: true,
+    },
+    userName: {
+      type: String,
+      unique: true,
+      required: true,
+    },
+    customerId: {
+      type: String,
+      unique: true,
+      required: true,
+    },
+    isAgent: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+    awaitingAgentAuth: {
+      type: Boolean,
+      default: false,
+    },
+    address: {
+      street: String,
+      town: String,
+      state: String,
+    },
+    imgUrl: String,
+    idCardUrl: String,
+  },
 });
 
 
 // converts the usershema to a user model
-var Users = mongoose.model('Users', Userschema);
+const Users = mongoose.model('Users', Userschema);
 
 // exporting the model has Users
 module.exports = {
-  Users: Users
+  Users,
 };
