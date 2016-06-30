@@ -1,11 +1,12 @@
-const mongoose = require('mongoose');
-const schema = mongoose.Schema;
+const Promise = require('bluebird');
+const mongoose = Promise.promisifyAll(require('mongoose'));
+const Schema = mongoose.Schema;
 
 
 // creating a schema which show the validation of userbiodata
 // which takes email, password, fullName,imgurl has strings
 // phoneNo has a Number
-const Userschema = new schema({
+const Userschema = new Schema({
   email: {
     type: String,
     unique: true,
@@ -53,7 +54,7 @@ const Userschema = new schema({
   },
 });
 
-
+Userschema.set('toObject', { virtuals: true });
 // converts the usershema to a user model
 const Users = mongoose.model('Users', Userschema);
 

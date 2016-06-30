@@ -5,10 +5,13 @@ const ObjectId = mongoose.Schema.Types.ObjectId;
 const orderSchema = schema({
   owner_Id: ObjectId,
   owner_userName: String,
+  reciever_UserName: String,
+  reciever_Id: ObjectId,
   agent_Id: ObjectId,
   agent_userName: String,
   hint: String,
   details: String,
+  deliveryCode: String,
   awaiting: {
     type: Boolean,
     default: false,
@@ -17,11 +20,20 @@ const orderSchema = schema({
     type: Boolean,
     default: false,
   },
+  agentDelivered: {
+    type: Boolean,
+    default: false,
+  },
   deliveryTime: String,
   dateCreated: {
     type: Date,
     default: Date.now,
   },
+  canceled: {
+    type: Boolean,
+    default: false,
+  },
+  canceledBy: ObjectId,
 });
 
 const Orders = mongoose.model('Orders', orderSchema);

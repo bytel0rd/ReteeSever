@@ -9,7 +9,6 @@ const sessionStore = require('connect-mongo')(session);
 
 const mongoose = require('mongoose');
 const passport = require('passport');
-
 // datbase connection address
 const url = 'mongodb://127.0.0.1/iDeliver';
 mongoose.connect(url, (err) => {

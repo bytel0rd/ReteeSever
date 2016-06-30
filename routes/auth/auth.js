@@ -65,23 +65,22 @@ router
 router
   .route('/dashBoard')
   .get((req, res) => {
-    if (req.isAuthenticated()) {
-      Users.findOne({
-        _id: req.session.passport.user,
-      }, (userErr, user) => {
-        if (userErr) {
-          return (userErr);
-        }
-        // sends a response with the user object
-        return res.status(200).json({
-          user,
-        });
-      });
-    } else {
+    if (!req.isAuthenticated()) {
       res.status(401).json({
         mgs: 'unauthorize request login',
       });
     }
+    Users.findOne({
+      _id: req.session.passport.user,
+    }).then((user) => {
+      return res.status(200).json({
+        user,
+      });
+    }, (err) => {
+      return res.status(407).json({
+        err,
+      });
+    });
   })
   .post((req, res) => {
     const newBio = req.body;
@@ -120,7 +119,7 @@ router
 router.post('/authorizeAgent', (req, res) => {
   const newBio = req.body;
   Users.findOneAndUpdate({
-    owner_ID: req.session.passport.user,
+    _id: req.session.passport.user,
   }, {
     $set: {
       'profile.isAgent': true,
@@ -131,10 +130,10 @@ router.post('/authorizeAgent', (req, res) => {
     upsert: true,
   }, (err, User) => {
     if (err) {
-      res.status(401).json(err);
+      return res.status(304).json(err);
     }
     // the newly user object is sent back has a response
-    res.status(201).json(User);
+    return res.status(201).json(User);
   });
 });
 

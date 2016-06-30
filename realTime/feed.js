@@ -1,19 +1,32 @@
 const Orders = require('./../models/orderShema.js').Orders;
-
-function getCurrentFeedList() {
-  return 'connetcd mr abey';
-}
+const Users = require('./../models/userSchema.js').Users;
 // {
 //   sort: {
 //     dateCreated: -1,
 //   },
 //   limit: 15,
 // }
-//
+
 
 module.exports = function realtimeFeed(io) {
   console.log('branching io');
+  const currentUserIds = {};
+
   io.on('connection', (socket) => {
+    // creating an object to store all currently socket
+    // objects connected to the server setting and creating
+    // socketObj for private Object.
+    socket.on('addUser', (data) => {
+      // names the connected user socket to the userId
+      // and stores it in the global object.
+      // if (currentUserIds[data.userId]) {
+      //   return null;
+      // }
+      // socket.nickName = data.userId;
+      // socket.id = data.userId;
+      currentUserIds[data.userId] = socket.id;
+      return null;
+    });
     // on connection the server sends a
     // limited feedList of already created
     //  orders to the feed
@@ -40,22 +53,36 @@ module.exports = function realtimeFeed(io) {
     //   a callback is made in which returns
     //   the data or error for the client
     socket.on('serverReceiveOrder', (data, callback) => {
-      const saveData = new Orders(data);
-      saveData.save((err) => {
-        if (err) {
-          callback({
-            err,
+      // checks if the username exists in the database
+
+      Users.findOne({
+        'profile.userName': data.reciever_UserName,
+      }, (userErr, user) => {
+        // console.log(user);
+        if (!user || userErr) {
+          return callback({
+            errMgs: 'Reciever doesn\'t exit',
           }, undefined);
-          // TODO: notify the Creator of the error
-        } else {
-          callback(undefined, {
-            saveData,
-          });
-          // sends back the order to the generic
-          //  feed after succesfull validation
-          io.sockets.emit('clientReceiveNewOrder', saveData);
         }
+        data.reciever_Id = user._id;
+        const saveData = new Orders(data);
+        saveData.save((err) => {
+          if (err) {
+            return callback({
+              errMgs: 'invalid dataProvided',
+            }, undefined);
+          }
+          return null;
+        });
+        // TODO: notify the Creator of the error
+        // sends back the order to the generic
+        //  feed after succesfull validation
+        io.sockets.emit('clientReceiveNewOrder', saveData);
+        return callback(undefined, saveData);
       });
     });
+
+    // importing the private chats an negotiations
+    require('./negotiation.js')(io, socket, currentUserIds);
   });
 };
