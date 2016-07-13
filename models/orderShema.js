@@ -11,7 +11,8 @@ const orderSchema = schema({
   agent_userName: String,
   hint: String,
   details: String,
-  deliveryCode: String,
+  userSetCode: ObjectId,
+  deliveryCodeId: String,
   awaiting: {
     type: Boolean,
     default: false,
@@ -23,6 +24,10 @@ const orderSchema = schema({
   agentDelivered: {
     type: Boolean,
     default: false,
+  },
+  visible: {
+    type: Boolean,
+    default: true,
   },
   deliveryTime: String,
   dateCreated: {

@@ -6,11 +6,7 @@ const router = new express.Router();
 const Users = require('./../../models/userSchema.js').Users;
 const Orders = require('./../../models/orderShema.js').Orders;
 const Negos = require('./../../models/negoSchema.js').Negos;
-const DeliveryCodes = require().DeliveryCodes;
 
-const config = require('./../../serverConfig.json');
-
-console.log(config);
 // models\orderShema.js
 // "/orders" route allows only a GET request,
 // which returns a json object which returns the array
@@ -29,6 +25,7 @@ router
       }, {
         agent_Id: currentUserId,
       }],
+      // visible: true,
       canceled: false,
       delivered: false,
     }, (err, order) => {
@@ -81,8 +78,15 @@ router
 router
   .route('/deliveries')
   .get((req, res) => {
+    const currentUserId = req.session.passport.user;
     Orders.find({
-      owner_Id: req.session.passport.user,
+      $or: [{
+        owner_Id: currentUserId,
+      }, {
+        reciever_Id: currentUserId,
+      }, {
+        agent_Id: currentUserId,
+      }],
       delivered: true,
     }, (err, order) => {
       if (order) {
@@ -259,75 +263,46 @@ router.get('/negotiations/:id', (req, res) => {
   });
 });
 
-// res.status(200).json(order)
-router.post('/agentDeliverOrder', (req, res) => {
-  // TODO: send megs to reciever
-
-  const randCode = authCode();
-  const currentTime = getCurrentTime();
-
-  const delivery = new DeliveryCodes({
-    randCode,
-    currentTime,
+router.post('/cancelOrder', (req, res) => {
+  Orders.findOneAndUpdate({
+    _id: req.body.orderId,
+    delivered: false,
+  }, {
+    $set: {
+      canceledBy: req.session.passport.user,
+      canceled: true,
+      visible: false,
+    },
+  }, {
+    new: true,
+  }, (err, order) => {
+    if (order) {
+      return res.status(200).json(order);
+    }
+    return res.status(204).json(err);
   });
+});
 
+router.post('/confirmOrder', (req, res) => {
   Orders.findOneAndUpdate({
     _id: req.body.orderId,
   }, {
     $set: {
+      delivered: true,
       agentDelivered: true,
-      deliveryCode: delivery._id,
+      userSetCode: req.session.passport.user,
+      deliveryTime: Date.now(),
     },
+  }, {
+    new: true,
   }, (err, order) => {
     if (err) {
-      res.status(401).json(err);
+      res.status(401).json({
+        errMgs: 'err from database',
+      });
     }
-    getReceiverPhoneNo(order);
+    res.status(200).json(order);
   });
-
-  function getReceiverPhoneNo(recieverId) {
-    Users.findOne({
-      _id: recieverId,
-    }).then((err) => {
-      res.status(401).json(err);
-    }, (user) => {
-      sendSMS(user.profile.phone);
-    });
-  }
-
-  function sendSMS(id, No) {
-    const url = config.SMS.baseUrl + 'username=' + config.SMS.Auth.userName + '&password=' + config.SMS.Auth.password + '&sender=InstantBlink' + '&message=' + config.SMS.messageTemplate + id + ' is ' + randCode + '&flash=' + config.SMS.Auth.flash + '&sendtime=' + currentTime + '&listname=' + config.SMS.Auth.listName + '&recipients=' + No;
-    // req.get(url);
-    console.log(url);
-
-    saveAuthCode();
-
-    res.json(200).json({
-      Mgs: ' Confirmation message has been sent to the Reciever',
-    });
-  }
-
-  function authCode() {
-    return '12345';
-  }
-
-  function getCurrentTime() {
-    return Date.now();
-  }
-
-  function saveAuthCode() {
-    delivery.save((err) => {
-      if (err) {
-        return res.status(401).json(err);
-      }
-
-      return null;
-    });
-  }
-
-  // http://www.MultiTexter.com/tools/geturl/Sms.php?username=abc&password=xyz&sender=
-  // you&message=yourmessage&flash=0&sendtime=2009-10-
-  // 18%2006:30&listname=friends&recipients=2348019900323
 });
 
 module.exports = router;

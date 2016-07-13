@@ -54,7 +54,6 @@ module.exports = function realtimeFeed(io) {
     //   the data or error for the client
     socket.on('serverReceiveOrder', (data, callback) => {
       // checks if the username exists in the database
-
       Users.findOne({
         'profile.userName': data.reciever_UserName,
       }, (userErr, user) => {

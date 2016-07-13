@@ -1,0 +1,6 @@
+# ignore files from the app that should not be tracked.
+
+dest/
+node_modules/
+private.js
+serverConfig.json

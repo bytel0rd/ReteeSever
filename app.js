@@ -7,10 +7,12 @@ const bodyParser = require('body-parser');
 const session = require('express-session');
 const sessionStore = require('connect-mongo')(session);
 
+const config = require('./serverConfig.json');
+
 const mongoose = require('mongoose');
 const passport = require('passport');
 // datbase connection address
-const url = 'mongodb://127.0.0.1/iDeliver';
+const url = config.dbUrl;
 mongoose.connect(url, (err) => {
   if (err) {
     throw 'connect or check connection to mongodb';
