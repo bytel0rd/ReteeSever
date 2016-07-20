@@ -17,6 +17,7 @@ mongoose.connect(url, (err) => {
   if (err) {
     throw 'connect or check connection to mongodb';
   }
+  console.log('connected to online server');
 });
 
 // initalizing express framework for routing routes

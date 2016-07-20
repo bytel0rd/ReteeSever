@@ -1,19 +1,17 @@
 const LocalStrategy = require('passport-local').Strategy;
-// const bcrypt = require('bcrypt-nodejs'); for authetication in production
+const bcrypt = require('bcrypt'); // for authetication in production
 
 // module used for random number generation
 const crypto = require('crypto');
 // const biguint = require('biguint-format');
+const createHash = function createHash(password) {
+  return bcrypt.hashSync(password, bcrypt.genSaltSync(10));
+};
 
 const isValidPassword = function isValidPassword(user, password) {
-  return user.password !== password;
-  /* bcrypt.compareSync(password, user.password);*/
+  return bcrypt.compareSync(password, user.password);
 };
 
-const createHash = function createHash(password) {
-  return password;
-  /* bcrypt.hashSync(password, bcrypt.genSaltSync(10), null);*/
-};
 
 // which is the number of constiables to be generated.
 // this random method takes a parameter @{qty},
@@ -55,26 +53,30 @@ module.exports = function authExport(passport, Users) {
   passport.use('login', new LocalStrategy({
     passReqToCallback: true,
     usernameField: 'email',
-    passwordField: 'password' },
+    passwordField: 'password',
+  },
     (req, email, password, done) => {
-    // TODO: user NOT FOUND TODO: INVALID password TODO: AUTHENTICATE user
+      // TODO: user NOT FOUND TODO: INVALID password TODO: AUTHENTICATE user
       Users.findOne({
         email,
       }, (err, user) => {
         if (err) {
           // console.log(err);
           return done(null, false, {
-            message: 'user not found' });
+            message: 'user not found',
+          });
         }
         if (user === null) {
           return done(null, false, {
-            message: 'emailAddress not found' });
+            message: 'emailAddress not found',
+          });
         }
         if (isValidPassword(user, password)) {
-          return done(null, false, {
-            message: 'INVALID password' });
+          return done(null, user);
         }
-        return done(null, user);
+        return done(null, false, {
+          message: 'INVALID password',
+        });
       });
     }));
 
@@ -87,11 +89,13 @@ module.exports = function authExport(passport, Users) {
   passport.use('signUp', new LocalStrategy({
     passReqToCallback: true,
     usernameField: 'email',
-    passwordField: 'password' },
+    passwordField: 'password',
+  },
     (req, email, password, done) => {
       // find a user in mongo with provided emailAddress
       Users.findOne({
-        email }, (err, user) => {
+        email,
+      }, (err, user) => {
         // In case of any error, return using the done method
         if (err) {
           return done(err);
@@ -99,7 +103,8 @@ module.exports = function authExport(passport, Users) {
         // already exists
         if (user) {
           return done(null, false, {
-            message: 'userEmail already exist' });
+            message: 'userEmail already exist',
+          });
         }
         // if there is no user, create the user
         // to  understand the user validation process
@@ -111,7 +116,9 @@ module.exports = function authExport(passport, Users) {
             fullName: req.body.fullName,
             userName: req.body.userName,
             phoneNo: req.body.phoneNo,
-            customerId: random(7) } });
+            customerId: random(7),
+          },
+        });
 
         // save the user
         // console.log(newuser);
@@ -121,7 +128,8 @@ module.exports = function authExport(passport, Users) {
             // throw err;
             return done(null, false, {
               message: 'userSignUpvalidation fail',
-              err: saveErr });
+              err: saveErr,
+            });
           }
           return done(null, newuser);
           /* console.log(newuser.username + ' Registration succesful');*/
