@@ -3,7 +3,7 @@
 dest/
 node_modules/
 private.js
-serverConfig.json
+#serverConfig.json
 models/deliveryCodeSchema.js
 npm-debug.log
 routes/api/delivery.js

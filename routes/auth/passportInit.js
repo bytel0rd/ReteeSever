@@ -1,5 +1,5 @@
 const LocalStrategy = require('passport-local').Strategy;
-const bcrypt = require('bcrypt'); // for authetication in production
+const bcrypt = require('bcryptjs'); // for authetication in production
 
 // module used for random number generation
 const crypto = require('crypto');
